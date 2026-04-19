@@ -30,6 +30,19 @@ async function scrapeCards(page, config, filters) {
     await page.waitForSelector(config.waitFor, { timeout: 15000 }).catch(() => {});
   }
 
+  const diagnostics = await page.evaluate(({ cardSelector }) => {
+    const bodyText = document.body?.innerText?.replace(/\s+/g, " ").trim() ?? "";
+    const title = document.title ?? "";
+    const cardCount = document.querySelectorAll(cardSelector).length;
+    return {
+      title,
+      cardCount,
+      bodySnippet: bodyText.slice(0, 240)
+    };
+  }, {
+    cardSelector: config.cardSelector
+  });
+
   const rawListings = await page.evaluate(({ cardSelector, fields, baseUrl, limit }) => {
     const text = (el, selector) => {
       if (!selector) return "";
@@ -71,6 +84,26 @@ async function scrapeCards(page, config, filters) {
     baseUrl: config.baseUrl,
     limit: filters.limit ?? 20
   });
+
+  if (!rawListings.length) {
+    const blockedTerms = [
+      "captcha",
+      "verify you are human",
+      "access denied",
+      "forbidden",
+      "unusual traffic",
+      "robot",
+      "blocked"
+    ];
+    const combinedText = `${diagnostics.title} ${diagnostics.bodySnippet}`.toLowerCase();
+    const blocked = blockedTerms.find((term) => combinedText.includes(term));
+
+    throw new Error(
+      blocked
+        ? `${config.label} appears to be blocking automated traffic (${blocked})`
+        : `${config.label} returned no listing cards for selector ${config.cardSelector}`
+    );
+  }
 
   return rawListings.map((listing) => normalizeListing(config, listing));
 }

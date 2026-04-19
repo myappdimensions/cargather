@@ -28,10 +28,7 @@ function renderProviders(items) {
   items.forEach((item) => {
     const pill = document.createElement("div");
     pill.className = `provider-pill ${item.ok ? "is-ok" : "is-error"}`;
-    pill.textContent = item.ok ? `${item.label}: ${item.count}` : `${item.label}: unavailable`;
-    if (!item.ok && item.error) {
-      pill.title = item.error;
-    }
+    pill.textContent = item.ok ? `${item.label}: ${item.count}` : `${item.label}: ${item.error || "unavailable"}`;
     providers.appendChild(pill);
   });
 }
