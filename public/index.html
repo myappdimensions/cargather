@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CarGather</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="page-shell">
+      <section class="hero">
+        <p class="eyebrow">Used car marketplace aggregator</p>
+        <h1>Search one app, scan multiple dealer sites.</h1>
+        <p class="hero-copy">
+          CarGather pulls together listings from JavaScript-heavy car marketplaces and normalizes year,
+          mileage, price, and seller info into a single comparison view.
+        </p>
+      </section>
+
+      <section class="panel">
+        <form id="search-form" class="filters">
+          <label>
+            <span>Make</span>
+            <input name="make" placeholder="BMW" />
+          </label>
+          <label>
+            <span>Model</span>
+            <input name="model" placeholder="3 Series" />
+          </label>
+          <label>
+            <span>Postcode</span>
+            <input name="postcode" placeholder="SW1A 1AA" />
+          </label>
+          <label>
+            <span>Min year</span>
+            <input name="minYear" type="number" min="1980" max="2030" placeholder="2020" />
+          </label>
+          <label>
+            <span>Min price</span>
+            <input name="minPrice" type="number" min="0" step="500" placeholder="5000" />
+          </label>
+          <label>
+            <span>Max price</span>
+            <input name="maxPrice" type="number" min="0" step="500" placeholder="20000" />
+          </label>
+          <label>
+            <span>Max mileage</span>
+            <input name="maxMileage" type="number" min="0" step="1000" placeholder="60000" />
+          </label>
+          <label>
+            <span>Fuel type</span>
+            <input name="fuelType" placeholder="Petrol" />
+          </label>
+          <label>
+            <span>Transmission</span>
+            <input name="transmission" placeholder="Automatic" />
+          </label>
+          <label>
+            <span>Results per site</span>
+            <input name="limit" type="number" min="1" max="50" value="12" />
+          </label>
+          <button type="submit">Search marketplaces</button>
+        </form>
+      </section>
+
+      <section class="status-row">
+        <div id="summary" class="summary-card">Waiting for a search.</div>
+        <div id="providers" class="provider-pills"></div>
+      </section>
+
+      <section id="results" class="results-grid"></section>
+    </main>
+
+    <template id="card-template">
+      <article class="listing-card">
+        <div class="image-wrap">
+          <img alt="" loading="lazy" />
+        </div>
+        <div class="card-body">
+          <div class="card-meta">
+            <span class="source-badge"></span>
+            <span class="price"></span>
+          </div>
+          <h2></h2>
+          <p class="subtitle"></p>
+          <dl class="specs"></dl>
+          <p class="details"></p>
+          <a class="cta" target="_blank" rel="noreferrer">View listing</a>
+        </div>
+      </article>
+    </template>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+  </html>
