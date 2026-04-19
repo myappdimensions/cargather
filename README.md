@@ -1,19 +1,17 @@
 # CarGather
 
-CarGather is a small Node.js web app that aggregates used car listings from JavaScript-heavy marketplaces into one searchable UI.
+CarGather is a small Node.js web app that scrapes Auto Trader listings into one searchable UI.
 
 ## What it does
 
 - Serves a single-page search interface
-- Scrapes multiple providers with Playwright so client-rendered listing pages can load before extraction
+- Scrapes Auto Trader with Playwright so client-rendered listing pages can load before extraction
 - Normalizes listing data into one shape with comparable `price`, `year`, `mileage`, `fuelType`, and `transmission` fields
 - Applies shared filters across all providers before returning the combined result set
 
-## Providers included
+## Provider included
 
 - Auto Trader
-- Motor
-- Cinch
 
 ## Run locally
 
@@ -48,13 +46,13 @@ The easiest production path for this app is a Docker-based host because Playwrig
 Example query:
 
 ```text
-/api/search?make=BMW&model=3%20Series&minYear=2020&maxPrice=20000&maxMileage=60000&transmission=Automatic&limit=12
+/api/search?make=Mazda&model=Mazda3&postcode=BH1%204PZ&fuelType=Petrol&maxMileage=60000&maxPrice=11000&limit=12
 ```
 
 ## Notes
 
 - The provider selectors are intentionally isolated in `src/scrapers/providers.js` so each marketplace can be updated independently when markup changes.
-- Some marketplaces may block automation, rate-limit requests, or require selector maintenance over time, especially from shared cloud hosting.
-- Each provider is time-boxed so one slow marketplace does not block the whole aggregated search.
+- Auto Trader may still block automation or rate-limit requests from shared cloud hosting.
+- The Auto Trader scrape is time-boxed so one slow request does not hang the app.
 - Production hosting should use the included Docker image because Playwright needs a bundled browser environment.
 - The current build is an MVP and does not yet add caching, deduplication, pagination, or a database.

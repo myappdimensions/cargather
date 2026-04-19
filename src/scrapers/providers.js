@@ -1,14 +1,21 @@
 import { normalizeListing } from "./normalize.js";
 
-function buildQueryString(filters) {
+function buildAutotraderQuery(filters) {
   const params = new URLSearchParams();
+
+  params.set("channel", "cars");
+  params.set("exclude-writeoff-categories", "on");
+  params.set("sort", "relevance");
 
   if (filters.make) params.set("make", filters.make);
   if (filters.model) params.set("model", filters.model);
   if (filters.postcode) params.set("postcode", filters.postcode);
+  if (filters.fuelType) params.set("fuel-type", filters.fuelType);
+  if (filters.transmission) params.set("transmission", filters.transmission);
   if (filters.minYear) params.set("year-from", String(filters.minYear));
+  if (filters.minPrice) params.set("price-from", String(filters.minPrice));
   if (filters.maxPrice) params.set("price-to", String(filters.maxPrice));
-  if (filters.maxMileage) params.set("mileage-to", String(filters.maxMileage));
+  if (filters.maxMileage) params.set("maximum-mileage", String(filters.maxMileage));
 
   return params.toString();
 }
@@ -43,7 +50,7 @@ async function scrapeCards(page, config, filters) {
     cardSelector: config.cardSelector
   });
 
-  const rawListings = await page.evaluate(({ cardSelector, fields, baseUrl, limit }) => {
+  const rawListings = await page.evaluate(({ cardSelector, fields, baseUrl, limit, fallbackCardSelectors }) => {
     const text = (el, selector) => {
       if (!selector) return "";
       const node = el.querySelector(selector);
@@ -56,7 +63,11 @@ async function scrapeCards(page, config, filters) {
       return node ? node.getAttribute(attribute) ?? "" : "";
     };
 
-    return Array.from(document.querySelectorAll(cardSelector))
+    const cardNodes = document.querySelectorAll(cardSelector).length
+      ? document.querySelectorAll(cardSelector)
+      : document.querySelectorAll(fallbackCardSelectors.join(", "));
+
+    return Array.from(cardNodes)
       .slice(0, limit)
       .map((card, index) => {
         const href = attr(card, fields.link, "href");
@@ -82,7 +93,8 @@ async function scrapeCards(page, config, filters) {
     cardSelector: config.cardSelector,
     fields: config.fields,
     baseUrl: config.baseUrl,
-    limit: filters.limit ?? 20
+    limit: filters.limit ?? 20,
+    fallbackCardSelectors: config.fallbackCardSelectors ?? []
   });
 
   if (!rawListings.length) {
@@ -112,9 +124,11 @@ async function scrapeCards(page, config, filters) {
   return rawListings.map((listing) => normalizeListing(config, listing));
 }
 
-function withFallbackUrl(baseUrl, path, filters) {
-  const query = buildQueryString(filters);
-  return query ? `${baseUrl}${path}?${query}` : `${baseUrl}${path}`;
+function buildAutotraderUrl(filters) {
+  const query = buildAutotraderQuery(filters);
+  return query
+    ? `https://www.autotrader.co.uk/car-search?${query}`
+    : "https://www.autotrader.co.uk/car-search?channel=cars&exclude-writeoff-categories=on&sort=relevance";
 }
 
 export const providers = [
@@ -122,20 +136,26 @@ export const providers = [
     name: "autotrader",
     label: "Auto Trader",
     baseUrl: "https://www.autotrader.co.uk",
-    buildUrl: (filters) => withFallbackUrl("https://www.autotrader.co.uk", "/car-search", filters),
+    buildUrl: (filters) => buildAutotraderUrl(filters),
     waitFor: "[data-testid='search-listing-card']",
     gotoTimeout: 70000,
     waitForTimeout: 25000,
     settleDelay: 5000,
+    timeoutMs: 70000,
     cardSelector: "[data-testid='search-listing-card']",
+    fallbackCardSelectors: [
+      "[data-testid*='listing']",
+      "[data-testid*='advert']",
+      "article"
+    ],
     fields: {
-      title: "[data-testid='advert-title']",
+      title: "[data-testid='advert-title'], h2, h3",
       subtitle: "[data-testid='advert-subtitle']",
-      price: "[data-testid='advert-price']",
-      mileage: "[data-testid='advert-mileage']",
-      year: "[data-testid='advert-registration-year']",
-      fuelType: "[data-testid='advert-fuel-type']",
-      transmission: "[data-testid='advert-transmission']",
+      price: "[data-testid='advert-price'], [class*='price']",
+      mileage: "[data-testid='advert-mileage'], [class*='mileage']",
+      year: "[data-testid='advert-registration-year'], [class*='year']",
+      fuelType: "[data-testid='advert-fuel-type'], [class*='fuel']",
+      transmission: "[data-testid='advert-transmission'], [class*='transmission']",
       location: "[data-testid='seller-location']",
       dealer: "[data-testid='seller-name']",
       image: "img",
@@ -144,64 +164,6 @@ export const providers = [
     },
     acceptCookies: async (page) => {
       await page.getByRole("button", { name: /accept/i }).click().catch(() => {});
-    },
-    scrape: scrapeCards
-  },
-  {
-    name: "motor",
-    label: "Motor",
-    baseUrl: "https://www.motor.co.uk",
-    buildUrl: (filters) => withFallbackUrl("https://www.motor.co.uk", "/search", filters),
-    waitFor: "[data-testid='vehicle-card'], article",
-    gotoTimeout: 70000,
-    waitForTimeout: 25000,
-    settleDelay: 4500,
-    cardSelector: "[data-testid='vehicle-card'], article",
-    fields: {
-      title: "h2, h3",
-      subtitle: "[class*='spec'], [class*='subtitle']",
-      price: "[class*='price']",
-      mileage: "li, [class*='mileage']",
-      year: "li, [class*='year']",
-      fuelType: "li, [class*='fuel']",
-      transmission: "li, [class*='transmission']",
-      location: "[class*='location']",
-      dealer: "[class*='dealer']",
-      image: "img",
-      link: "a",
-      details: "ul"
-    },
-    acceptCookies: async (page) => {
-      await page.getByRole("button", { name: /accept|agree/i }).click().catch(() => {});
-    },
-    scrape: scrapeCards
-  },
-  {
-    name: "cinch",
-    label: "Cinch",
-    baseUrl: "https://www.cinch.co.uk",
-    buildUrl: (filters) => withFallbackUrl("https://www.cinch.co.uk", "/used-cars", filters),
-    waitFor: "article, [data-testid='listing-card']",
-    gotoTimeout: 70000,
-    waitForTimeout: 25000,
-    settleDelay: 4500,
-    cardSelector: "article, [data-testid='listing-card']",
-    fields: {
-      title: "h2, h3",
-      subtitle: "[class*='description'], [class*='subtitle']",
-      price: "[class*='price']",
-      mileage: "li, [class*='mileage']",
-      year: "li, [class*='year']",
-      fuelType: "li, [class*='fuel']",
-      transmission: "li, [class*='transmission']",
-      location: "[class*='location']",
-      dealer: "[class*='dealer']",
-      image: "img",
-      link: "a",
-      details: "ul"
-    },
-    acceptCookies: async (page) => {
-      await page.getByRole("button", { name: /accept|allow/i }).click().catch(() => {});
     },
     scrape: scrapeCards
   }

@@ -19,7 +19,7 @@ function formatNumber(value, suffix = "") {
 }
 
 function setLoading(loading) {
-  summary.textContent = loading ? "Searching Auto Trader, Motor, and Cinch..." : summary.textContent;
+  summary.textContent = loading ? "Searching Auto Trader..." : summary.textContent;
 }
 
 function renderProviders(items) {
@@ -97,7 +97,7 @@ async function runSearch(event) {
       throw new Error(payload.details || payload.error || "Search failed");
     }
 
-    summary.textContent = `${payload.count} listings aggregated across ${payload.providers.length} providers.`;
+    summary.textContent = `${payload.count} listings found on Auto Trader.`;
     renderProviders(payload.providers);
     renderListings(payload.listings);
   } catch (error) {
