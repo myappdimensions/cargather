@@ -34,7 +34,7 @@ export async function searchListings(filters) {
 
         const listings = await withTimeout(
           provider.scrape(page, provider, filters),
-          30000,
+          provider.timeoutMs ?? 60000,
           provider.label
         );
         const filteredListings = applyFilters(listings, filters);

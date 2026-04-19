@@ -13,7 +13,6 @@ CarGather is a small Node.js web app that aggregates used car listings from Java
 
 - Auto Trader
 - Motor
-- Carzoo
 - Cinch
 
 ## Run locally
@@ -55,7 +54,7 @@ Example query:
 ## Notes
 
 - The provider selectors are intentionally isolated in `src/scrapers/providers.js` so each marketplace can be updated independently when markup changes.
-- Some marketplaces may block automation, rate-limit requests, or require selector maintenance over time.
+- Some marketplaces may block automation, rate-limit requests, or require selector maintenance over time, especially from shared cloud hosting.
 - Each provider is time-boxed so one slow marketplace does not block the whole aggregated search.
 - Production hosting should use the included Docker image because Playwright needs a bundled browser environment.
 - The current build is an MVP and does not yet add caching, deduplication, pagination, or a database.

@@ -19,7 +19,7 @@ function formatNumber(value, suffix = "") {
 }
 
 function setLoading(loading) {
-  summary.textContent = loading ? "Searching Auto Trader, Motor, Carzoo and Cinch..." : summary.textContent;
+  summary.textContent = loading ? "Searching Auto Trader, Motor, and Cinch..." : summary.textContent;
 }
 
 function renderProviders(items) {

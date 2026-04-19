@@ -17,17 +17,17 @@ async function scrapeCards(page, config, filters) {
   const url = config.buildUrl(filters);
   await page.goto(url, {
     waitUntil: "domcontentloaded",
-    timeout: 45000
+    timeout: config.gotoTimeout ?? 60000
   });
 
   if (config.acceptCookies) {
     await config.acceptCookies(page);
   }
 
-  await page.waitForTimeout(2500);
+  await page.waitForTimeout(config.settleDelay ?? 3500);
 
   if (config.waitFor) {
-    await page.waitForSelector(config.waitFor, { timeout: 15000 }).catch(() => {});
+    await page.waitForSelector(config.waitFor, { timeout: config.waitForTimeout ?? 20000 }).catch(() => {});
   }
 
   const diagnostics = await page.evaluate(({ cardSelector }) => {
@@ -89,11 +89,15 @@ async function scrapeCards(page, config, filters) {
     const blockedTerms = [
       "captcha",
       "verify you are human",
+      "verify you are a human",
       "access denied",
       "forbidden",
       "unusual traffic",
       "robot",
-      "blocked"
+      "blocked",
+      "please enable cookies",
+      "temporarily unavailable",
+      "challenge"
     ];
     const combinedText = `${diagnostics.title} ${diagnostics.bodySnippet}`.toLowerCase();
     const blocked = blockedTerms.find((term) => combinedText.includes(term));
@@ -120,6 +124,9 @@ export const providers = [
     baseUrl: "https://www.autotrader.co.uk",
     buildUrl: (filters) => withFallbackUrl("https://www.autotrader.co.uk", "/car-search", filters),
     waitFor: "[data-testid='search-listing-card']",
+    gotoTimeout: 70000,
+    waitForTimeout: 25000,
+    settleDelay: 5000,
     cardSelector: "[data-testid='search-listing-card']",
     fields: {
       title: "[data-testid='advert-title']",
@@ -146,6 +153,9 @@ export const providers = [
     baseUrl: "https://www.motor.co.uk",
     buildUrl: (filters) => withFallbackUrl("https://www.motor.co.uk", "/search", filters),
     waitFor: "[data-testid='vehicle-card'], article",
+    gotoTimeout: 70000,
+    waitForTimeout: 25000,
+    settleDelay: 4500,
     cardSelector: "[data-testid='vehicle-card'], article",
     fields: {
       title: "h2, h3",
@@ -167,37 +177,14 @@ export const providers = [
     scrape: scrapeCards
   },
   {
-    name: "carzoo",
-    label: "Carzoo",
-    baseUrl: "https://www.carzoo.co.uk",
-    buildUrl: (filters) => withFallbackUrl("https://www.carzoo.co.uk", "/used-cars", filters),
-    waitFor: "article, [data-testid='listing-card']",
-    cardSelector: "article, [data-testid='listing-card']",
-    fields: {
-      title: "h2, h3",
-      subtitle: "[class*='variant'], [class*='subtitle']",
-      price: "[class*='price']",
-      mileage: "li, [class*='mileage']",
-      year: "li, [class*='year']",
-      fuelType: "li, [class*='fuel']",
-      transmission: "li, [class*='transmission']",
-      location: "[class*='location']",
-      dealer: "[class*='dealer']",
-      image: "img",
-      link: "a",
-      details: "ul"
-    },
-    acceptCookies: async (page) => {
-      await page.getByRole("button", { name: /accept|allow/i }).click().catch(() => {});
-    },
-    scrape: scrapeCards
-  },
-  {
     name: "cinch",
     label: "Cinch",
     baseUrl: "https://www.cinch.co.uk",
     buildUrl: (filters) => withFallbackUrl("https://www.cinch.co.uk", "/used-cars", filters),
     waitFor: "article, [data-testid='listing-card']",
+    gotoTimeout: 70000,
+    waitForTimeout: 25000,
+    settleDelay: 4500,
     cardSelector: "article, [data-testid='listing-card']",
     fields: {
       title: "h2, h3",
